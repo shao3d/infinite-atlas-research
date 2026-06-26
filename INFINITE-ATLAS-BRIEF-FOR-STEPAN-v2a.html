@@ -1,0 +1,834 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Infinite Atlas — сухая сводка решений</title>
+  <meta name="description" content="Короткая рабочая сводка решений по Infinite Atlas: колоды, механики, AI-пайплайн, первые карты, reuse, fun и learning." />
+  <style>
+    :root{
+      --green:#58cc02;
+      --green-dark:#43a800;
+      --green-soft:#e9ffd8;
+      --blue:#1cb0f6;
+      --blue-soft:#e7f6ff;
+      --yellow:#ffc800;
+      --yellow-soft:#fff6cc;
+      --purple:#ce82ff;
+      --purple-soft:#f6e9ff;
+      --red:#ff4b4b;
+      --red-soft:#ffe8e8;
+      --ink:#202f36;
+      --muted:#64757d;
+      --line:#d9e4e8;
+      --bg:#f7fbf5;
+      --paper:#ffffff;
+      --shadow:#c9d8dd;
+      --radius:22px;
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      color:var(--ink);
+      background:
+        radial-gradient(circle at 10% 0%, rgba(88,204,2,.18), transparent 22rem),
+        radial-gradient(circle at 92% 10%, rgba(28,176,246,.13), transparent 20rem),
+        var(--bg);
+      font-family: ui-rounded, "SF Pro Rounded", "Nunito", Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height:1.52;
+    }
+
+    .wrap{width:min(1120px, calc(100% - 30px));margin:24px auto 70px}
+    .top{
+      display:block;
+      padding:36px;
+      background:var(--paper);
+      border:2px solid var(--line);
+      border-radius:32px;
+      box-shadow:0 8px 0 var(--shadow);
+    }
+    .kicker{
+      display:inline-flex;
+      align-items:center;
+      gap:9px;
+      padding:7px 12px;
+      border-radius:999px;
+      background:var(--green-soft);
+      color:#2f8500;
+      font-weight:900;
+      font-size:.78rem;
+      text-transform:uppercase;
+      letter-spacing:.06em;
+    }
+    .dot{width:10px;height:10px;background:var(--green);border-radius:50%;box-shadow:0 0 0 4px rgba(88,204,2,.18)}
+    h1{
+      margin:18px 0 10px;
+      font-size:clamp(2.1rem,5vw,4.35rem);
+      line-height:1.01;
+      letter-spacing:-.05em;
+    }
+    .lead{
+      max-width:780px;
+      margin:0;
+      color:#3f535b;
+      font-size:clamp(1.02rem,2vw,1.22rem);
+      font-weight:650;
+    }
+
+    nav{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin:22px 0 0;
+    }
+    nav a{
+      color:var(--ink);
+      text-decoration:none;
+      background:white;
+      border:2px solid var(--line);
+      box-shadow:0 4px 0 var(--shadow);
+      border-radius:999px;
+      padding:9px 13px;
+      font-weight:850;
+      font-size:.9rem;
+    }
+
+    section{
+      margin-top:22px;
+      padding:28px;
+      background:var(--paper);
+      border:2px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:0 7px 0 var(--shadow);
+    }
+    h2{
+      margin:0 0 13px;
+      font-size:clamp(1.55rem,3vw,2.25rem);
+      line-height:1.12;
+      letter-spacing:-.035em;
+    }
+    h3{margin:22px 0 8px;font-size:1.08rem}
+    p{margin:8px 0;color:#3f535b}
+    .muted{color:var(--muted)}
+    .tight{margin-top:4px}
+
+    .rule{
+      margin:16px 0 0;
+      padding:18px 20px;
+      border-radius:18px;
+      background:var(--green-soft);
+      border:2px solid #b6ef90;
+      font-weight:900;
+      color:#245f00;
+    }
+    .danger-rule{
+      background:var(--red-soft);
+      border-color:#ffc4c4;
+      color:#7a2020;
+    }
+
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:15px}
+    .grid.two{grid-template-columns:repeat(2,1fr)}
+    .grid.four{grid-template-columns:repeat(4,1fr)}
+    .card{
+      padding:18px;
+      border:2px solid var(--line);
+      border-radius:20px;
+      background:#fff;
+      box-shadow:0 4px 0 #d7e0e4;
+    }
+    .card.green{background:var(--green-soft);border-color:#b6ef90;box-shadow:0 4px 0 #9edb73}
+    .card.blue{background:var(--blue-soft);border-color:#b7e4ff;box-shadow:0 4px 0 #91d5ff}
+    .card.yellow{background:var(--yellow-soft);border-color:#ffe68a;box-shadow:0 4px 0 #e6c95f}
+    .card.purple{background:var(--purple-soft);border-color:#e5c2ff;box-shadow:0 4px 0 #d5a9f0}
+    .card.red{background:var(--red-soft);border-color:#ffc4c4;box-shadow:0 4px 0 #ebb0b0}
+    .label{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:4px 9px;
+      border-radius:999px;
+      background:rgba(255,255,255,.72);
+      border:1px solid rgba(0,0,0,.06);
+      font-weight:950;
+      font-size:.72rem;
+      text-transform:uppercase;
+      letter-spacing:.05em;
+      color:#45565e;
+      margin-bottom:8px;
+    }
+    .card h3{margin:0 0 6px}
+    ul{margin:9px 0 0;padding-left:19px;color:#3f535b}
+    li{margin:5px 0}
+
+    .matrix{
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0;
+      margin-top:16px;
+      overflow:hidden;
+      border:2px solid var(--line);
+      border-radius:18px;
+      background:white;
+      box-shadow:0 5px 0 #d7e0e4;
+    }
+    .matrix th,.matrix td{
+      padding:13px 14px;
+      text-align:left;
+      vertical-align:top;
+      border-bottom:1px solid var(--line);
+      border-right:1px solid var(--line);
+      font-size:.92rem;
+    }
+    .matrix th{
+      background:#f1f7f9;
+      color:#314047;
+      font-weight:950;
+      white-space:nowrap;
+    }
+    .matrix tr:last-child td{border-bottom:none}
+    .matrix td:last-child,.matrix th:last-child{border-right:none}
+    .matrix b{color:#1d2c33}
+    .tag{
+      display:inline-block;
+      padding:3px 8px;
+      border-radius:999px;
+      background:#eef3f5;
+      color:#48616b;
+      font-weight:900;
+      font-size:.75rem;
+      margin:2px 3px 2px 0;
+    }
+    .tag.green{background:#dfffcc;color:#2f8500}
+    .tag.blue{background:#d9f1ff;color:#0075b8}
+    .tag.yellow{background:#fff0a8;color:#865900}
+    .tag.purple{background:#f1ddff;color:#7337a5}
+
+    .flow{
+      display:grid;
+      grid-template-columns:repeat(7,1fr);
+      gap:9px;
+      margin-top:16px;
+    }
+    .step{
+      min-height:108px;
+      padding:14px 12px;
+      border-radius:16px;
+      border:2px solid var(--line);
+      background:#fff;
+      box-shadow:0 4px 0 #d7e0e4;
+      position:relative;
+      font-size:.87rem;
+    }
+    .step b{display:block;margin-bottom:4px}
+    .step:not(:last-child):after{
+      content:"›";
+      position:absolute;
+      right:-11px;top:36%;
+      width:22px;height:22px;
+      border-radius:50%;
+      background:var(--green);
+      color:white;
+      display:grid;place-items:center;
+      font-weight:1000;
+      z-index:2;
+    }
+
+    .deck{
+      display:grid;
+      grid-template-columns:1.05fr 1fr;
+      gap:14px;
+      margin-top:15px;
+    }
+    .deck-plan{
+      padding:18px;
+      border-radius:20px;
+      background:#fff;
+      border:2px solid var(--line);
+      box-shadow:0 4px 0 #d7e0e4;
+    }
+    .deck-plan h3{margin-top:0}
+    .slots{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:8px;
+      margin-top:12px;
+    }
+    .slot{
+      min-height:78px;
+      padding:10px;
+      border-radius:15px;
+      background:#f6fafb;
+      border:2px dashed #cfdde2;
+      font-size:.8rem;
+      font-weight:800;
+      color:#43565f;
+    }
+
+    .list-clean{
+      list-style:none;
+      padding:0;
+      display:grid;
+      gap:8px;
+    }
+    .list-clean li{
+      padding:10px 12px;
+      border-radius:14px;
+      background:#f6fafb;
+      border:1px solid #dde8ec;
+      margin:0;
+    }
+    .list-clean b{color:#1d2c33}
+
+    .code{
+      margin-top:14px;
+      padding:16px;
+      border-radius:18px;
+      background:#1f2930;
+      color:#d7f6cf;
+      font: .86rem/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      white-space:pre-wrap;
+      box-shadow:0 5px 0 #11191e;
+      overflow:auto;
+    }
+
+    .callout{
+      margin-top:16px;
+      padding:18px;
+      border-radius:20px;
+      background:#fff;
+      border:2px solid var(--line);
+      box-shadow:0 4px 0 #d7e0e4;
+    }
+    .callout strong{color:#1e5f00}
+    .mini-title{
+      margin:20px 0 8px;
+      font-weight:950;
+      color:#2d3c43;
+      text-transform:uppercase;
+      letter-spacing:.05em;
+      font-size:.8rem;
+    }
+
+    .footer{
+      color:#6b7e86;
+      text-align:center;
+      margin-top:24px;
+      font-size:.88rem;
+    }
+
+    @media(max-width:940px){
+      .top{grid-template-columns:1fr;padding:26px}
+      .grid,.grid.two,.grid.four,.deck{grid-template-columns:1fr}
+      .flow{grid-template-columns:1fr}
+      .step{min-height:0}
+      .step:not(:last-child):after{
+        content:"⌄";
+        right:calc(50% - 11px);
+        top:auto;
+        bottom:-13px;
+      }
+      .matrix{display:block;overflow-x:auto}
+      .slots{grid-template-columns:repeat(2,1fr)}
+    }
+
+    @media print{
+      body{background:white}
+      .wrap{width:100%;margin:0}
+      .top,section{box-shadow:none;break-inside:avoid}
+      nav{display:none}
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="top">
+      <div>
+        <span class="kicker"><span class="dot"></span> Infinite Atlas · сухая сводка</span>
+        <h1>Карты, механики, колоды и AI‑пайплайн</h1>
+        <p class="lead">
+          Что делаем, какие первые карточки берём, как собираем колоды, как используем AI
+          и как не убить интерес ребёнка переиспользованием.
+        </p>
+        <nav>
+          <a href="#core">Ядро</a>
+          <a href="#decks">Колоды</a>
+          <a href="#mechanics">Механики</a>
+          <a href="#first">Первые карты</a>
+          <a href="#pipeline">Пайплайн</a>
+          <a href="#reuse">Reuse</a>
+          <a href="#qa">Проверка</a>
+        </nav>
+      </div>
+    </header>
+
+    <section id="core">
+      <h2>1. Коротко: что решено</h2>
+      <div class="grid">
+        <div class="card green">
+          <span class="label">Продукт</span>
+          <h3>Физическая карта → короткий интерактив</h3>
+          <p>Ребёнок открывает карту в PWA и делает действие: чинит, спасает, строит, ищет, управляет, проверяет гипотезу.</p>
+        </div>
+        <div class="card blue">
+          <span class="label">Обучение</span>
+          <h3>Факт = способ победить</h3>
+          <p>Если карту можно пройти без понимания правила, это не обучающая карта, а игра с учебной наклейкой.</p>
+        </div>
+        <div class="card yellow">
+          <span class="label">Производство</span>
+          <h3>Manifest + AI‑ассеты + плагины</h3>
+          <p>Новая карта не должна приносить свой TypeScript. Она должна собираться из данных, ассетов и готовых модулей.</p>
+        </div>
+      </div>
+      <div class="rule">
+        Главная формула: переиспользуем невидимую фабрику; меняем видимое переживание ребёнка.
+      </div>
+    </section>
+
+    <section id="decks">
+      <h2>2. Как собирать колоды</h2>
+      <p>
+        Колода не должна быть линейной кампанией. Физические карты будут открываться в разном порядке.
+        Поэтому каждая карта самодостаточна, но все вместе дают миссию, журнал, набор способностей и финальный payoff.
+      </p>
+
+      <div class="grid four">
+        <div class="card">
+          <span class="label">Шаг 1</span>
+          <h3>Общая миссия</h3>
+          <p>Одна понятная рамка: экспедиция, лаборатория, спасательная операция, инженерный вызов.</p>
+        </div>
+        <div class="card">
+          <span class="label">Шаг 2</span>
+          <h3>Портфель ролей</h3>
+          <p>Не 16 одинаковых мини‑игр. Ребёнок должен быть то исследователем, то инженером, то спасателем.</p>
+        </div>
+        <div class="card">
+          <span class="label">Шаг 3</span>
+          <h3>Способности</h3>
+          <p>Карта открывает не только слот, а новый инструмент: эхо‑сканер, камуфляж, управление потоком.</p>
+        </div>
+        <div class="card">
+          <span class="label">Шаг 4</span>
+          <h3>Финальная миссия</h3>
+          <p>Использует знания и способности из нескольких карт. Это лучше, чем просто альбом 16/16.</p>
+        </div>
+      </div>
+
+      <h3>Рабочие темы колод</h3>
+      <div class="deck">
+        <div class="deck-plan">
+          <h3>Океан — лучший кандидат на первую mini‑deck</h3>
+          <p>Уже есть три сильных карты с разными эмоциями и механиками:</p>
+          <div class="slots">
+            <div class="slot">Эхо<br>тайна / поиск</div>
+            <div class="slot">Каракатица<br>магия / suspense</div>
+            <div class="slot">Удильщик<br>спасение / аркада</div>
+            <div class="slot">+ следы / течения / риф<br>на расширение</div>
+          </div>
+        </div>
+        <div class="deck-plan">
+          <h3>Другие колоды</h3>
+          <ul class="list-clean">
+            <li><b>Роботы:</b> диагностика, энергия, сенсоры, ремонт, причинные реакции.</li>
+            <li><b>Рим:</b> акведуки, арки, дороги, механизмы, hidden systems.</li>
+            <li><b>Динозавры:</b> следы, поведение, среда, масштаб, раскопки.</li>
+            <li><b>Космос:</b> орбиты, гравитация, свет, аппараты. Не начинать с пассивного scrub.</li>
+            <li><b>Тело:</b> кровоток, дыхание, сигналы, защита. Осторожно с тревожными fail‑сценами.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="rule">
+        Коллекция должна обещать новую возможность, а не только закрытие пустого слота.
+      </div>
+    </section>
+
+    <section id="mechanics">
+      <h2>3. Механики, которые берём в основу</h2>
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Семейство</th>
+            <th>Где ценно</th>
+            <th>Почему подходит производству</th>
+            <th>Риск</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>Диагностика → действие → реакция</b><br><span class="tag green">drag‑zone</span><span class="tag blue">clip‑branch</span></td>
+            <td>Роботы, тело, техника, космический аппарат.</td>
+            <td>Один plugin, разные симптомы, детали и реакции. Learning легко встроить в причину.</td>
+            <td>Не скатиться в «перетащи подсвеченную деталь».</td>
+          </tr>
+          <tr>
+            <td><b>Поток / путь / соединение</b><br><span class="tag green">flow‑path</span></td>
+            <td>Акведук, ирригация, трубы, кровоток, энергия.</td>
+            <td>Проверка идёт по метаданным сегментов, не нужна дорогая симуляция.</td>
+            <td>Слишком сухо без эмоционального outcome.</td>
+          </tr>
+          <tr>
+            <td><b>Сенсорный поиск</b><br><span class="tag blue">pulse‑scan</span></td>
+            <td>Эхо, сонар, летучая мышь, подлодка, пещера, робот.</td>
+            <td>Мало дорогих ассетов. Новое ощущение создаёт звук, задержка и reveal.</td>
+            <td>Нужен визуальный fallback, если звук плохой.</td>
+          </tr>
+          <tr>
+            <td><b>Камуфляж / matching context</b><br><span class="tag purple">actor states</span></td>
+            <td>Каракатица, хамелеон, маскировка, скрытые объекты.</td>
+            <td>Можно собрать на static states + crossfade + один predator outcome.</td>
+            <td>AI должен удержать один и тот же объект в разных состояниях.</td>
+          </tr>
+          <tr>
+            <td><b>Спаси / увернись / проведи</b><br><span class="tag yellow">arcade‑field</span></td>
+            <td>Удильщик, астероиды, магнит, течение, вентилятор, погоня.</td>
+            <td>Физика даёт replay и мастерство, которого не дают одни ветки клипов.</td>
+            <td>Баланс и performance надо проверять на телефоне.</td>
+          </tr>
+          <tr>
+            <td><b>Раскрытие слоя / следы</b><br><span class="tag purple">mask‑reveal</span></td>
+            <td>Следовой детектив, раскопки, рентген, археология.</td>
+            <td>Дешёвая карта с высоким learning; почти без дорогой анимации.</td>
+            <td>Если нет гипотезы, это просто «потёр экран».</td>
+          </tr>
+          <tr>
+            <td><b>Atlas Short / оживший факт</b><br><span class="tag blue">optional</span></td>
+            <td>Факт имеет физическое последствие, шутку или reveal.</td>
+            <td>Может усилить setup, outcome, bonus, упаковку и трейлер.</td>
+            <td>Не должен заменить игру пассивным роликом.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Правило выбора</h3>
+      <div class="rule">
+        Базовый формат — gameplay‑first. Short добавляется только если факт реально становится смешным, драматичным или визуально неизбежным событием.
+      </div>
+    </section>
+
+    <section id="first">
+      <h2>4. Первые карты, которые стоит делать</h2>
+      <p>
+        Это не «финальная колода». Это набор для проверки фабрики: разные темы, разные эмоции,
+        разные production routes и разные механики. После них уже можно собирать первую mini‑deck.
+      </p>
+
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Карта</th>
+            <th>Fun</th>
+            <th>Learning</th>
+            <th>Механика / route</th>
+            <th>Что доказывает</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>1</b></td>
+            <td><b>Почему робот не едет?</b><br>Роботы</td>
+            <td>Смешной бедолага ломается; ребёнок чинит и оживляет.</td>
+            <td>Функциональная цепочка: энергия → управление → мотор → передача → колесо.</td>
+            <td><span class="tag green">drag‑zone</span><span class="tag blue">clip‑branch</span><br>actor reactions</td>
+            <td>Stage, manifest, branching, реакционные AI‑клипы и главный learning‑proof.</td>
+          </tr>
+          <tr>
+            <td><b>2</b></td>
+            <td><b>Вода для Рима</b><br>История / инженерия</td>
+            <td>Ребёнок запускает воду, и город оживает.</td>
+            <td>Вода идёт по непрерывному уклону; акведук не насос.</td>
+            <td><span class="tag green">flow‑path</span><span class="tag blue">optional outcome‑short</span></td>
+            <td>Структурная игра без fluid simulation. Хороший кандидат на оживший факт.</td>
+          </tr>
+          <tr>
+            <td><b>3</b></td>
+            <td><b>Эхо в полной темноте</b><br>Океан / животные</td>
+            <td>Почти чёрный экран; ребёнок сам проявляет мир звуковым импульсом.</td>
+            <td>Сигнал отражается; задержка и направление несут информацию о расстоянии.</td>
+            <td><span class="tag blue">pulse‑scan</span><br>audio + visual reveal</td>
+            <td>Новый сенсорный вкус при малом количестве дорогих ассетов.</td>
+          </tr>
+          <tr>
+            <td><b>4</b></td>
+            <td><b>Исчезни, каракатица!</b><br>Океан</td>
+            <td>Хищник смотрит прямо на неё, но ребёнок подбирает рисунок и она исчезает.</td>
+            <td>Камуфляж — это pattern и contrast, а не просто один цвет.</td>
+            <td><span class="tag purple">actor states</span><span class="tag blue">optional short</span></td>
+            <td>AI‑wow и no‑new‑plugin acceptance: новая карта на старых primitives.</td>
+          </tr>
+          <tr>
+            <td><b>5</b></td>
+            <td><b>Спаси стаю от удильщика</b><br>Океан</td>
+            <td>Красивый опасный свет, отставшая рыбка, rescue climax.</td>
+            <td>Светящаяся приманка может быть частью охотничьей стратегии.</td>
+            <td><span class="tag yellow">arcade‑field</span><br>attractor / safe zones</td>
+            <td>Первая сильная physics/replay‑карта.</td>
+          </tr>
+          <tr>
+            <td><b>6</b></td>
+            <td><b>Следовой детектив</b><br>Динозавры / археология</td>
+            <td>Смахнул слой, нашёл улики, восстановил событие прошлого.</td>
+            <td>Дорожка следов даёт больше информации, чем один отпечаток.</td>
+            <td><span class="tag purple">mask‑reveal</span><br>ghost outcome</td>
+            <td>Дешёвая спокойная карта с сильным learning и малым video‑риском.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout">
+        <strong>Почему не начинать со сверхновой:</strong>
+        красивый scrub даёт wow, но слабее проверяет replay, причинное решение и перенос знания. Космос лучше вводить позже через запуск, орбиту, гравитацию или предсказание.
+      </div>
+    </section>
+
+    <section id="pipeline">
+      <h2>5. Пайплайн производства</h2>
+      <p>
+        Строим не редактор и не большую фабрику сразу. Строим маленький исполняющий Stage,
+        schemas, несколько plugins и скрипты, которые превращают AI‑ассеты в карточку.
+      </p>
+
+      <div class="flow">
+        <div class="step"><b>Brief</b>Тема, fantasy, learning, факт, риск, pressure.</div>
+        <div class="step"><b>card.spec</b>Что хотим доказать и чем карта ценна.</div>
+        <div class="step"><b>asset.recipe</b>Какие изображения, клипы, TTS и SFX генерим.</div>
+        <div class="step"><b>AI generation</b>Image, i2v, TTS, SFX, варианты.</div>
+        <div class="step"><b>Processing</b>matte, crop, atlas, encode, preview.</div>
+        <div class="step"><b>manifest</b>states, plugins, assets, branches, fallbacks.</div>
+        <div class="step"><b>QA</b>tests, mobile, offline, human approve, playtest.</div>
+      </div>
+
+      <h3>Артефакты не смешивать</h3>
+      <div class="grid four">
+        <div class="card">
+          <span class="label">card.spec.json</span>
+          <p>Замысел: fun, learning, route, risks, acceptance.</p>
+        </div>
+        <div class="card">
+          <span class="label">asset.recipe.json</span>
+          <p>Как генерить ассеты: prompts, refs, providers, post‑processing.</p>
+        </div>
+        <div class="card">
+          <span class="label">card.manifest.json</span>
+          <p>Что исполняет Stage: states, inputs, plugins, outcomes.</p>
+        </div>
+        <div class="card">
+          <span class="label">run.jsonl</span>
+          <p>Факт производства: attempts, rejects, cost, review, tests.</p>
+        </div>
+      </div>
+
+      <h3>Стек</h3>
+      <div class="code">TypeScript strict
+pnpm workspaces
+Vite PWA
+Phaser 3.90.x
+Zod
+XState 5 — если flow усложняется; в greybox можно transition table
+vite-plugin-pwa / injectManifest
+Workbox
+IndexedDB + Cache Storage
+Vitest + Playwright
+ffmpeg / ffprobe
+sharp
+tsx scripts
+Codex как основной coding-agent</div>
+
+      <h3>Репозиторий</h3>
+      <div class="code">apps/pwa
+packages/runtime
+packages/schema
+packages/tooling
+packages/plugins/drag-zone
+packages/plugins/flow-path
+packages/plugins/pulse-scan
+packages/plugins/arcade-field
+packages/plugins/mask-reveal
+packages/plugins/fx
+
+content/cards/robot-repair
+content/cards/roman-aqueduct
+content/cards/whale-echo
+content/cards/cuttlefish-camo
+content/cards/anglerfish-save
+content/cards/track-detective
+
+generated/atlases
+generated/previews
+generated/packs
+runs/</div>
+    </section>
+
+    <section id="reuse">
+      <h2>6. Как добиваться reuse без однообразия</h2>
+      <div class="grid two">
+        <div class="card green">
+          <h3>Переиспользуем</h3>
+          <ul>
+            <li>Stage и state machine;</li>
+            <li>input plugins;</li>
+            <li>physics/system plugins;</li>
+            <li>FX и camera presets;</li>
+            <li>actor packs и scene packs;</li>
+            <li>schemas, tests, asset processors;</li>
+            <li>offline shell и deck installer.</li>
+          </ul>
+        </div>
+        <div class="card yellow">
+          <h3>Меняем</h3>
+          <ul>
+            <li>роль ребёнка;</li>
+            <li>тип решения;</li>
+            <li>темп и эмоцию;</li>
+            <li>причинную модель;</li>
+            <li>последствие ошибки;</li>
+            <li>условия повторного запуска;</li>
+            <li>способ подачи: gameplay, reaction, physics, short, reveal.</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>Правило нового plugin</h3>
+      <ul class="list-clean">
+        <li><b>Новый код разрешён,</b> если он нужен минимум нескольким картам.</li>
+        <li><b>Plugin задаётся JSON‑конфигом</b> и не знает cardId.</li>
+        <li><b>Есть Zod‑schema и тесты.</b> Без этого это не фабрика, а демо.</li>
+        <li><b>Следующая карта использует plugin без программиста.</b></li>
+      </ul>
+
+      <div class="danger-rule rule">
+        Если для новой карты появляется special-case TypeScript, мы не масштабируемся. Нужно либо обобщить plugin, либо упростить карту.
+      </div>
+    </section>
+
+    <section id="shorts">
+      <h2>7. Atlas Shorts — как использовать, не превращая продукт в мультики</h2>
+      <p>
+        Короткий AI‑сегмент — это не default и не замена игре. Это один из способов подачи,
+        когда факт хорошо становится физическим событием, шуткой или reveal.
+      </p>
+
+      <div class="grid four">
+        <div class="card blue">
+          <span class="label">setup</span>
+          <h3>Завязка</h3>
+          <p>За несколько секунд показывает проблему и передаёт управление.</p>
+        </div>
+        <div class="card green">
+          <span class="label">interactive</span>
+          <h3>Вмешательство</h3>
+          <p>Сюжет замирает перед переломом; ребёнок выбирает или запускает исход.</p>
+        </div>
+        <div class="card yellow">
+          <span class="label">outcome</span>
+          <h3>Последствие</h3>
+          <p>После gameplay показывает смешной или драматичный причинный результат.</p>
+        </div>
+        <div class="card purple">
+          <span class="label">bonus</span>
+          <h3>Награда</h3>
+          <p>Открывается за секрет, серию карт или transfer‑челлендж.</p>
+        </div>
+      </div>
+
+      <h3>Когда short брать</h3>
+      <ul class="list-clean">
+        <li><b>Да:</b> один факт, одно физическое последствие, одна локация, один герой/объект, понятный payoff.</li>
+        <li><b>Да:</b> ребёнок влияет на причинный перелом или заслуживает outcome настоящей игрой.</li>
+        <li><b>Нет:</b> нужен lip‑sync, толпа, сложный контакт персонажей, много сцен или ручная покадровая чистка.</li>
+        <li><b>Нет:</b> ролик смешной, но учит ложной причине.</li>
+      </ul>
+
+      <div class="rule">
+        Текст, числа и образовательные надписи не запекаем в AI‑видео. Факт рендерится runtime‑слоем: можно исправлять, переводить, озвучивать и показывать второй слой «Почему?».
+      </div>
+    </section>
+
+    <section id="qa">
+      <h2>8. Как проверяем баланс fun и learning</h2>
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th>Что проверяем</th>
+            <th>Признак успеха</th>
+            <th>Стоп-сигнал</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><b>Fun</b></td>
+            <td>Ребёнок сам просит повторить, меняет стратегию, рассказывает событие от первого лица.</td>
+            <td>Интерес держится только на первом просмотре ролика.</td>
+          </tr>
+          <tr>
+            <td><b>Learning</b></td>
+            <td>Ребёнок объясняет причину и решает похожий новый пример.</td>
+            <td>Можно пройти случайным перебором или тапанием.</td>
+          </tr>
+          <tr>
+            <td><b>Reuse</b></td>
+            <td>Новая карта собирается manifest + assets без runtime diff.</td>
+            <td>Появляется if cardId или специальный файл логики.</td>
+          </tr>
+          <tr>
+            <td><b>AI‑производство</b></td>
+            <td>Ассеты проходят processing, плохие варианты регенерируются, actuals пишутся в run.jsonl.</td>
+            <td>Нужна ручная покадровая чистка или ручной SVG под карту.</td>
+          </tr>
+          <tr>
+            <td><b>Колода</b></td>
+            <td>Карты различаются по эмоции, роли и решению, но чувствуется общий мир.</td>
+            <td>Все карты ощущаются как «тащи объект и получай салют».</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Детские профили давления</h3>
+      <div class="grid">
+        <div class="card green"><h3>Explore</h3><p>Без проигрыша. Для первого запуска, младших детей и исследования.</p></div>
+        <div class="card blue"><h3>Quest</h3><p>Основной режим. Ошибка мягкая, обратимая и объясняет причину.</p></div>
+        <div class="card yellow"><h3>Challenge</h3><p>Таймер, рекорд, ограниченные попытки. Только добровольно или после освоения.</p></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>9. Что НЕ строим сейчас</h2>
+      <div class="grid two">
+        <div class="card red">
+          <h3>Не сейчас</h3>
+          <ul>
+            <li>полная 16–30 карточная колода;</li>
+            <li>анимированный rig‑гид;</li>
+            <li>Rive/Spine как обязательный путь;</li>
+            <li>image recognition вместо QR/manual code;</li>
+            <li>admin panel и orchestration;</li>
+            <li>multi-provider router;</li>
+            <li>daily rewards и FOMO‑экономика;</li>
+            <li>world models / realtime 3D / AR.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Сначала</h3>
+          <ul>
+            <li>Stage, schemas, plugins, asset pipeline;</li>
+            <li>Robot / Aqueduct / Echo / Cuttlefish;</li>
+            <li>потом Anglerfish и Track Detective;</li>
+            <li>после этого mini‑deck, вероятно Ocean;</li>
+            <li>детский playtest и реальные run‑данные;</li>
+            <li>только потом масштабирование.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      Infinite Atlas · сухая рабочая сводка · версия для Степана · июнь 2026
+    </footer>
+  </main>
+</body>
+</html>
